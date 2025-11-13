@@ -1,12 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log/slog"
 	"os"
 	"parser/filter"
-	"parser/segment"
+	"parser/model"
 	"strings"
 	"time"
 )
@@ -38,7 +39,7 @@ func parseTime(value string, label string) (time.Time, error) {
 func main() {
 
 	start := time.Now()
-	path := flag.String("path", "/home/sajad/project/logs", "Path to logs directory")
+	jsonFile := flag.String("file", "parsedLogs.json", "Input JSON file generated")
 	level := flag.String("level", "", "Filter by log level")
 	component := flag.String("component", "", "Filter by component")
 	host := flag.String("host", "", "Filter by host")
@@ -47,11 +48,18 @@ func main() {
 	endTimeString := flag.String("before", "", "Filter by end time")
 	flag.Parse()
 
-	segments, err := segment.CreateSegments(*path)
+	file, err := os.ReadFile(*jsonFile)
 
 	if err != nil {
-		slog.Error("Error in creating segments: ", "Error", err)
+		slog.Error("Error in Opening JSON file: ", "Error", err)
 		os.Exit(1)
+	}
+
+	var segments []model.Segment
+	err = json.Unmarshal(file, &segments)
+
+	if err != nil {
+		slog.Error("Error in reading JSON file", "error", err)
 	}
 
 	levels := split(*level)
@@ -70,5 +78,5 @@ func main() {
 	fmt.Printf("Found %d matching entries\n", len(filteredLogs))
 
 	elapsed := time.Since(start)
-	fmt.Printf("duration: %s\n", elapsed)
+	fmt.Printf("Total duration: %s\n", elapsed)
 }
