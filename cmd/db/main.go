@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"os"
 	"parser/model"
-	"parser/segment"
+	"parser/pkg/segment"
 
 	"github.com/jackc/pgx/v5"
 )
@@ -43,9 +43,8 @@ func InsertLogs(ctx context.Context, conn *pgx.Conn, segments []model.Segment) e
 func main() {
 	logPath := flag.String("path", "/home/sajad/project/logs", "Path to the log directory")
 	flag.Parse()
-	connStr := "postgres://sajad:root@localhost:5432/log_analyzer"
 	ctx := context.Background()
-	conn, err := pgx.Connect(ctx, connStr)
+	conn, err := pgx.Connect(ctx, os.Getenv("DATABASE_URL"))
 	if err != nil {
 		slog.Error("Unable to connect to database", "error", err)
 		os.Exit(1)
