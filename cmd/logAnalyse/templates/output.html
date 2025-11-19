@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Logs</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+
+        table {
+            width: 100%;
+
+            margin-top: 15px;
+            border: 1px solid black;
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+        }
+
+
+
+        .title {
+            font-size: 40px;
+            text-decoration: underline;
+            margin-bottom: 15px;
+            margin-left: 40%;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2 class="title">Log Entries</h2>
+
+    <div>
+        <form id="filterForm">
+
+            <!-- Log Level Checkboxes -->
+            <div>
+                <label><strong>Level:</strong></label><br>
+                <input type="checkbox" name="level" value="INFO"> INFO<br>
+                <input type="checkbox" name="level" value="DEBUG"> DEBUG<br>
+                <input type="checkbox" name="level" value="WARN"> WARN<br>
+                <input type="checkbox" name="level" value="ERROR"> ERROR<br>
+            </div>
+            <br>
+
+            <!-- Component Checkboxes -->
+            <div>
+                <label><strong>Component:</strong></label><br>
+                <input type="checkbox" name="component" value="worker"> worker<br>
+                <input type="checkbox" name="component" value="api-server"> api-server<br>
+                <input type="checkbox" name="component" value="cache"> cache<br>
+                <input type="checkbox" name="component" value="database"> database<br>
+                <input type="checkbox" name="component" value="auth"> auth<br>
+            </div>
+            <br>
+
+            <!-- Host Checkboxes -->
+            <div>
+                <label><strong>Host:</strong></label><br>
+                <input type="checkbox" name="host" value="web01"> server1<br>
+                <input type="checkbox" name="host" value="web02"> server2<br>
+                <input type="checkbox" name="host" value="cache01"> cache01<br>
+                <input type="checkbox" name="host" value="worker01"> worker01<br>
+                <input type="checkbox" name="host" value="db01"> db01<br>
+            </div>
+            <br>
+
+            <!-- Request ID -->
+            <input type="text" placeholder="Enter the RequestId" name="request_id">
+
+            <!-- DateTime -->
+            <input type="text" placeholder="Enter the DateTime" name="timestamp">
+
+            <button type="submit">Search</button>
+
+        </form>
+    </div>
+    <div>
+        <p>Total results: <span id="count">{{ .count }}</span> </p>
+    </div>
+
+    <div id="table-container">
+        <table>
+            <tr>
+                <thead>
+                    <th>Timestamp</th>
+                    <th>Level</th>
+                    <th>Component</th>
+                    <th>Host</th>
+                    <th>Request ID</th>
+                    <th>Message</th>
+
+                </thead>
+
+            </tr>
+
+            {{ range .entries }}
+            <tr>
+                <td>{{ .TimeStamp }}</td>
+                <td>{{ .Level.Level }}</td>
+                <td>{{ .Component.Component }}</td>
+                <td>{{ .Host.Host }}</td>
+                <td>{{ .RequestId }}</td>
+                <td>{{ .Message }}</td>
+            </tr>
+            {{ else }}
+            <tr>
+                <td colspan="6" style="text-align:center">No logs found.</td>
+            </tr>
+            {{ end }}
+
+        </table>
+
+    </div>
+
+
+
+
+
+    <script>
+        $(document).ready(function () {
+            $("#filterForm").on("submit", function (e) {
+                e.preventDefault();
+
+                $.ajax({
+                    url: "/",
+                    type: "POST",
+                    data: $(this).serialize(),
+                    success: function (response) {
+                        console.log("Number of logs:", response.entries.length);
+
+                        $("#table-container tbody").empty(); //clear old data fromm table
+                        $("#count").text(response.count); //update count
+
+                        if (response.entries.length === 0) {
+                            $("#table-container tbody").append(
+                                `<tr><td colspan="6" class="text-center text-muted">No logs found.</td></tr>`
+                            );
+                        } else {
+                            response.entries.forEach(e => {
+                                $("#table-container tbody").append(`
+                            <tr>
+                                <td>${e.TimeStamp}</td>
+                                <td>${e.Level.Level}</td>
+                                <td>${e.Component.Component}</td>
+                                <td>${e.Host.Host}</td>
+                                <td>${e.RequestId}</td>
+                                <td>${e.Message}</td>
+                            </tr>
+                        `);
+                            });
+                        }
+                        $("#filterForm")[0].reset(); //clear the selected values
+                    },
+                    error: function () {
+                        alert("Something went wrong!");
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+
+</html>
